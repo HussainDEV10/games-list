@@ -35,17 +35,17 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        .search-box, .add-box {
+        .search-box, .add-box, .sort-box {
             display: flex;
             gap: 10px;
-            width: 48%;
+            width: 32%;
         }
         @media (max-width: 768px) {
-            .search-box, .add-box {
+            .search-box, .add-box, .sort-box {
                 width: 100%;
             }
         }
-        input[type="text"] {
+        input[type="text"], select {
             padding: 10px;
             width: 100%;
             border: 1px solid #444;
@@ -114,10 +114,18 @@
 
     <div class="controls">
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="ابحث عن اسم لعبة..." onkeyup="filterGames()">
+            <input type="text" id="searchInput" placeholder="ابحث عن اسم لعبة..." onkeyup="applyFilters()">
+        </div>
+        <div class="sort-box">
+            <select id="sortSelect" onchange="applyFilters()">
+                <option value="default">الترتيب الافتراضي (حسب التسلسل)</option>
+                <option value="az">أبجدي (من A إلى Z)</option>
+                <option value="za">أبجدي معكوس (من Z إلى A)</option>
+                <option value="random">ترتيب عشوائي</option>
+            </select>
         </div>
         <div class="add-box">
-            <input type="text" id="gameNameInput" placeholder="أدخل اسم لعبة جديدة...">
+            <input type="text" id="gameNameInput" placeholder="أدخل لعبة جديدة...">
             <button onclick="addNewGame()">إضافة</button>
         </div>
     </div>
@@ -159,9 +167,9 @@
                 };
             });
 
-            renderTable(games);
+            applyFilters();
         } catch (error) {
-            document.getElementById('gamesTableBody').innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff5722;">تعذر تحميل ملف games.json. تأكد من وجوده في نفس المجلد مع index.html.</td></tr>`;
+            document.getElementById('gamesTableBody').innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff5722;">تعذر تحميل ملف games.json. تأكد من وجوده في نفس المجلد.</td></tr>`;
         }
     }
 
@@ -181,17 +189,17 @@
         document.getElementById('statsText').innerText = `تم لعب: ${playedCount} من أصل ${games.length} لعبة`;
     }
 
-    function renderTable(filteredGames = games) {
+    function renderTable(displayList) {
         const tbody = document.getElementById('gamesTableBody');
         tbody.innerHTML = '';
 
-        if (filteredGames.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #888;">لا توجد نتائج مطابقة للبحث</td></tr>`;
+        if (displayList.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #888;">لا توجد نتائج مطابقة</td></tr>`;
             document.getElementById('resultCount').innerText = `عدد النتائج: 0`;
             return;
         }
 
-        filteredGames.forEach((game) => {
+        displayList.forEach((game) => {
             const tr = document.createElement('tr');
             const originalIndex = games.findIndex(g => g.id === game.id);
             
@@ -205,24 +213,36 @@
             tbody.appendChild(tr);
         });
 
-        document.getElementById('resultCount').innerText = `عرض ${filteredGames.length} من ${games.length} لعبة`;
+        document.getElementById('resultCount').innerText = `عرض ${displayList.length} من ${games.length} لعبة`;
         updateStats();
     }
 
     function togglePlayed(index) {
         games[index].played = !games[index].played;
         saveProgress();
-        filterGames();
+        applyFilters();
     }
 
-    function filterGames() {
+    function applyFilters() {
         const query = document.getElementById('searchInput').value.trim().toLowerCase();
-        if (query === "") {
-            renderTable(games);
+        const sortType = document.getElementById('sortSelect').value;
+
+        // 1. التصفية حسب البحث
+        let processedList = games.filter(g => g.name.toLowerCase().includes(query));
+
+        // 2. الفلترة حسب خيار الترتيب
+        if (sortType === 'az') {
+            processedList.sort((a, b) => a.name.localeCompare(b.name));
+        } else if (sortType === 'za') {
+            processedList.sort((a, b) => b.name.localeCompare(a.name));
+        } else if (sortType === 'random') {
+            processedList = [...processedList].sort(() => Math.random() - 0.5);
         } else {
-            const filtered = games.filter(g => g.name.toLowerCase().includes(query));
-            renderTable(filtered);
+            // الافتراضي (حسب الـ id التصاعدي)
+            processedList.sort((a, b) => a.id - b.id);
         }
+
+        renderTable(processedList);
     }
 
     function addNewGame() {
@@ -240,7 +260,8 @@
         input.value = '';
         saveProgress();
         document.getElementById('searchInput').value = '';
-        renderTable(games);
+        document.getElementById('sortSelect').value = 'default';
+        applyFilters();
     }
 
     function resetData() {
