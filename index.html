@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>games-list</title>
+    <title>قائمة الألعاب (250 لعبة)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -108,7 +108,7 @@
 <body>
 
 <div class="container">
-    <h1>قائمة الألعاب الشاملة</h1>
+    <h1>قائمة ألعابي (250 لعبة)</h1>
     
     <div class="stats" id="statsText">جاري التحميل...</div>
 
@@ -144,16 +144,13 @@
 <script>
     let games = [];
 
-    // جلب البيانات من ملف الـ JSON الخارجي عند فتح الصفحة
     async function loadGamesData() {
         try {
             const response = await fetch('games.json');
             const jsonData = await response.json();
             
-            // التحقق من وجود بيانات مخزنة مسبقاً (مربعات الصح التي حددها المستخدم)
-            const savedProgress = JSON.parse(localStorage.getItem('my_games_progress')) || {};
+            const savedProgress = JSON.parse(localStorage.getItem('my_games_progress_250')) || {};
 
-            // دمج الالعاب الواردة من الملف مع حالة الصح والخطأ المخزنة محلياً
             games = jsonData.map(game => {
                 return {
                     id: game.id,
@@ -164,11 +161,10 @@
 
             renderTable(games);
         } catch (error) {
-            document.getElementById('gamesTableBody').innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff5722;">تعذر تحميل ملف games.json. تأكد من تشغيل الصفحة عبر سيرفر محلي (Live Server).</td></tr>`;
+            document.getElementById('gamesTableBody').innerHTML = `<tr><td colspan="3" style="text-align: center; color: #ff5722;">تعذر تحميل ملف games.json. تأكد من وجوده في نفس المجلد مع index.html.</td></tr>`;
         }
     }
 
-    // حفظ حالة الـ Checkbox فقط في الـ LocalStorage لتجنب تضارب الملفات
     function saveProgress() {
         let progressMap = {};
         games.forEach(game => {
@@ -176,7 +172,7 @@
                 progressMap[game.id] = true;
             }
         });
-        localStorage.setItem('my_games_progress', JSON.stringify(progressMap));
+        localStorage.setItem('my_games_progress_250', JSON.stringify(progressMap));
         updateStats();
     }
 
@@ -249,12 +245,11 @@
 
     function resetData() {
         if (confirm('هل أنت متأكد من مسح جميع خيارات الصح؟')) {
-            localStorage.removeItem('my_games_progress');
+            localStorage.removeItem('my_games_progress_250');
             loadGamesData();
         }
     }
 
-    // تشغيل الدالة عند تحميل الصفحة
     loadGamesData();
 </script>
 
